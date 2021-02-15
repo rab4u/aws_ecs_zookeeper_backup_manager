@@ -1,0 +1,68 @@
+[
+  {
+    "essential": true,
+    "image": "${image_url}",
+    "name": "${container_name}",
+    "cpu": 400,
+    "memory": 400,
+    "environment": [
+      {
+        "name" : "S3_PATH",
+        "value" : "${s3_backup_path}"
+      },
+      {
+        "name" : "BACKUP_INTERVAL",
+        "value" : "${backup_interval}"
+      },
+      {
+        "name" : "AUTO_BACKUP_ENABLED",
+        "value" : "true"
+      },
+      {
+        "name" : "ZOO_SERVERS",
+        "value" : "${zoo_servers}"
+      },
+      {
+        "name" : "BACKUP_NAME",
+        "value" : "zookeeper-backup"
+      }
+    ],
+    "portMappings": [
+      {
+        "containerPort": 5000,
+        "hostPort": 5000,
+        "protocol": "tcp"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${log_group_name}",
+        "awslogs-region": "${log_group_region}",
+        "awslogs-stream-prefix": "${log_prefix_name}"
+      }
+    }
+  },
+  {
+    "essential": true,
+    "image": "elkozmon/zoonavigator:latest",
+    "name": "zoo-navigator",
+    "cpu" : 400,
+    "memory": 400,
+    "portMappings": [
+      {
+        "containerPort": 9000,
+        "hostPort": 9000,
+        "protocol": "tcp"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${log_group_name}",
+        "awslogs-region": "${log_group_region}",
+        "awslogs-stream-prefix": "${log_prefix_name}"
+      }
+    }
+  }
+]

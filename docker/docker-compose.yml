@@ -1,0 +1,84 @@
+version: '3'
+services:
+  zoo1:
+    image: zookeeper:latest
+    container_name: zoo1
+    restart: always
+    hostname: zoo1
+    ports:
+      - 2181:2181
+      - 7091:7000
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=0.0.0.0:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
+      ZOO_AUTOPURGE_PURGEINTERVAL: 1
+      ZOO_AUTOPURGE_SNAPRETAINCOUNT: 3
+      ZOO_CFG_EXTRA: "metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000"
+
+  zoo2:
+    image: zookeeper:latest
+    container_name: zoo2
+    restart: always
+    hostname: zoo2
+    ports:
+      - 2182:2181
+      - 7092:7000
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=0.0.0.0:2888:3888;2181 server.3=zoo3:2888:3888;2181
+      ZOO_AUTOPURGE_PURGEINTERVAL: 1
+      ZOO_AUTOPURGE_SNAPRETAINCOUNT: 3
+      ZOO_CFG_EXTRA: "metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000"
+
+  zoo3:
+    image: zookeeper:latest
+    container_name: zoo3
+    restart: always
+    hostname: zoo3
+    ports:
+      - 2183:2181
+      - 7093:7000
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=0.0.0.0:2888:3888;2181
+      ZOO_AUTOPURGE_PURGEINTERVAL: 1
+      ZOO_AUTOPURGE_SNAPRETAINCOUNT: 3
+      ZOO_CFG_EXTRA: "metricsProvider.className=org.apache.zookeeper.metrics.prometheus.PrometheusMetricsProvider metricsProvider.httpPort=7000"
+
+
+  zoo_s3_bkup_service:
+    build:
+      context: ""
+    image: zoo-s3-bkup-service:latest
+    container_name: zoo_s3_bkup_service
+    depends_on:
+      - zoo3
+      - zoo1
+      - zoo2
+    restart: always
+    hostname: zoo_s3_bkup_service
+    ports:
+      - 5001:5000
+    environment:
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+      AWS_SESSION_TOKEN: "${AWS_SESSION_TOKEN}"
+      S3_PATH: "testbucketravi1814/zoobackup_test"
+      BACKUP_INTERVAL: 15
+      AUTO_BACKUP_ENABLED: "true"
+      BACKUP_NAME: zoo-bkup-dev
+      ZOO_SERVERS: zoo1:2181,zoo2:2181,zoo3:2181
+
+  zoonav:
+    image: elkozmon/zoonavigator:latest
+    container_name: zoonav
+    restart: always
+    hostname: zoonav
+    depends_on:
+      - zoo3
+      - zoo1
+      - zoo2
+    ports:
+      - 9000:9000
+    environment:
+      HTTP_PORT: 9000
